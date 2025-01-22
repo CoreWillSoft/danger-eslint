@@ -16,6 +16,7 @@ module Danger
         allow(@eslint.git).to receive(:deleted_files).and_return([])
         allow(@eslint.git).to receive(:added_files).and_return([])
         allow(@eslint.git).to receive(:modified_files).and_return([])
+        allow(@eslint.git).to receive(:renamed_files).and_return([])
         stub_const("Danger::DangerEslint::DEFAULT_BIN_PATH", 'spec/fixtures/bin/dummy_eslint')
       end
 
@@ -42,6 +43,7 @@ module Danger
 
           allow(@eslint.git).to receive(:added_files).and_return([])
           allow(@eslint.git).to receive(:modified_files).and_return([])
+          allow(@eslint.git).to receive(:renamed_files).and_return([])
 
           allow(@eslint).to receive(:run_lint)
             .with(anything, /error.js/).and_return(@error_result)
@@ -74,31 +76,9 @@ module Danger
           allow(@eslint.git).to receive(:modified_files)
             .and_return(['spec/fixtures/javascript/error.js'])
 
-          @eslint.filtering = true
-          @eslint.lint
+          @eslint.lint(filtering: true)
           error = @eslint.status_report[:errors].first
           expect(error).to eq('Parsing error: Unexpected token ;')
-          expect(@eslint.status_report[:warnings].length).to be(0)
-        end
-
-        it 'lint files with specified extention by target_extensions' do
-          allow(@eslint).to receive(:run_lint)
-            .with(anything, /error.[js|es6]/).and_return(@error_result)
-          allow(@eslint.git).to receive(:modified_files)
-            .and_return([
-              'spec/fixtures/javascript/error.es6',
-              'spec/fixtures/javascript/error.js'
-            ])
-
-          @eslint.target_extensions += %W(.es6)
-          @eslint.filtering = true
-          @eslint.lint
-
-          errors = @eslint.status_report[:errors]
-          expect(errors.length).to be(2)
-          errors.each do |error|
-            expect(error).to eq('Parsing error: Unexpected token ;')
-          end
           expect(@eslint.status_report[:warnings].length).to be(0)
         end
 
@@ -106,8 +86,7 @@ module Danger
           allow(@eslint.git).to receive(:modified_files)
             .and_return(['spec/fixtures/javascript/empty.js'])
 
-          @eslint.filtering = true
-          @eslint.lint
+          @eslint.lint(filtering: true)
 
           expect(@eslint.status_report[:errors].length).to be(0)
           expect(@eslint.status_report[:warnings].length).to be(0)
@@ -117,8 +96,7 @@ module Danger
           allow(@eslint.git).to receive(:modified_files)
             .and_return(['spec/fixtures/javascript/ignored.js'])
 
-          @eslint.filtering = true
-          @eslint.lint
+          @eslint.lint(filtering: true)
 
           expect(@eslint.status_report[:errors].length).to be(0)
           expect(@eslint.status_report[:warnings].length).to be(0)
@@ -157,13 +135,12 @@ module Danger
         it 'can specify eslint bin file' do
           bin_file = 'spec/fixtures/bin/somewhere_eslint'
           expect(@eslint).to receive(:run_lint)
-            .with(bin_file, /error.js/).and_return(@error_result)
+            .with(bin_file, '.').and_return(@error_result)
           allow(@eslint.git).to receive(:modified_files)
             .and_return(['spec/fixtures/javascript/error.js'])
 
           @eslint.bin_path = bin_file
-          @eslint.filtering = true
-          @eslint.lint
+          @eslint.lint(filtering: true)
           error = @eslint.status_report[:errors].first
           expect(error).to eq('Parsing error: Unexpected token ;')
           expect(@eslint.status_report[:warnings].length).to be(0)
