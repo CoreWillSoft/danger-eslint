@@ -1,5 +1,5 @@
 [{
-  "filePath": "danger-eslint/spec/fixtures/javascript/ignored.js",
+  "filePath": "spec/fixtures/javascript/ignored.js",
   "messages": [{
     "ruleId": "no-undef",
     "severity": 1,
